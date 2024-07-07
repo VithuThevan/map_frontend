@@ -1,5 +1,7 @@
+//customers.tsx
+
 import { Box, FormControl, FormLabel, Input, Button } from "@chakra-ui/react";
-import Map from "react-map-gl";
+import Map, { ViewState } from "react-map-gl";
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
@@ -7,10 +9,13 @@ import { useToast } from "@chakra-ui/react";
 import { useMutation } from "@tanstack/react-query";
 
 export default function Customers() {
+  const API = "http://localhost:3000/api/entry"; // API endpoint
+
+  // State variables for latitude, longitude, and form data
   const [latitude, setLatitude] = React.useState(0);
   const [longitude, setLongitude] = React.useState(0);
 
-  const toast = useToast();
+  const toast = useToast(); // Hook for toast notifications
 
   const [formData, setFormData] = React.useState({
     username: "",
@@ -18,13 +23,17 @@ export default function Customers() {
     longitude: 0,
   });
 
-  const onmove1 = (evt: any) => {
+  // Handler for map movement to update latitude and longitude
+  const onMove = (evt: ViewState) => {
     const { latitude, longitude } = evt;
     setLatitude(latitude);
     setLongitude(longitude);
   };
 
-  const handleInputChange = (event: any) => {
+  // Handler for input changes in the form
+
+  //type FormData = {username: string; latitude: number; longitude: number; }
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setFormData({
       ...formData,
@@ -32,33 +41,36 @@ export default function Customers() {
     });
   };
 
-  const onsubmit1 = async () => {
+  // Form submission handler
+  const handleSubmitForm = async () => {
     formData.latitude = latitude;
     formData.longitude = longitude;
-    onsubmit2.mutate();
+    console.log(formData);
+    submitMutation.mutate(); // Trigger mutation for form submission
   };
 
-  const onsubmit2 = useMutation({
+  // Mutation for submitting form data
+  const submitMutation = useMutation({
     mutationFn: async () => {
-      const response = await axios.post(
-        `http://localhost:3000/api/entry/`,
-        formData
-      );
+      const response = await axios.post(API, formData);
       return response.data;
     },
     onSuccess: () => {
       toast({
-        title: "Update Success.",
-        description: "Entry got Updated",
+        title: "Submission Success.",
+        description: "Entry has been successfully added.",
         status: "success",
         duration: 2000,
         isClosable: true,
       });
+      formData.username = "";
+      setLatitude(0);
+      setLongitude(0);
     },
     onError: () => {
       toast({
-        title: "Update Failed.",
-        description: "Entry could not be updated, please try again",
+        title: "Submission Failed.",
+        description: "Entry could not be added, please try again.",
         status: "error",
         duration: 2000,
         isClosable: true,
@@ -66,6 +78,7 @@ export default function Customers() {
     },
   });
 
+  // Hook for form handling
   const {
     handleSubmit,
     formState: { isSubmitting },
@@ -74,37 +87,39 @@ export default function Customers() {
   return (
     <Box display="flex">
       <Box m="50" w="50%" h="500">
+        {/* Map component to select location */}
         <Map
-          onMove={(evt) => onmove1(evt.viewState)}
+          onMove={(evt) => onMove(evt.viewState)}
           mapStyle="mapbox://styles/mapbox/streets-v9"
           style={{ width: "100%", height: "100%" }}
-          mapboxAccessToken={`${process.env.REACT_APP_MAPBOX_TOKEN}`}
+          mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
         />
       </Box>
       <Box m="50" w="50%">
-        <form onSubmit={handleSubmit(onsubmit1)}>
-          <FormControl id="email" isRequired>
+        {/* Form for user input */}
+        <form onSubmit={handleSubmit(handleSubmitForm)}>
+          <FormControl id="name" isRequired>
             <FormLabel>Name</FormLabel>
             <Input
-              type="name"
+              type="text"
               name="username"
               value={formData.username}
-              onChange={handleInputChange}
+              onChange={(e) => handleInputChange}
             />
           </FormControl>
-          <FormControl id="email" isRequired>
+          <FormControl id="latitude" isRequired>
             <FormLabel>Latitude</FormLabel>
             <Input
-              type="latitude"
+              type="number"
               name="latitude"
               value={latitude}
               onChange={handleInputChange}
             />
           </FormControl>
-          <FormControl id="email" isRequired>
+          <FormControl id="longitude" isRequired>
             <FormLabel>Longitude</FormLabel>
             <Input
-              type="longitude"
+              type="number"
               name="longitude"
               value={longitude}
               onChange={handleInputChange}

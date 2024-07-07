@@ -1,3 +1,5 @@
+//locations.tsx
+
 import { CheckIcon, CloseIcon, EditIcon } from "@chakra-ui/icons";
 import {
   Box,
@@ -22,6 +24,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
+// Define the Location interface
 interface Location {
   _id: string;
   username: string;
@@ -30,17 +33,21 @@ interface Location {
 }
 
 export default function Locations() {
-  const API = "http://localhost:3000/api/entry";
+  // API endpoint
+  const API: string = "http://localhost:3000/api/entry";
 
+  // Hooks for notifications and query management
   const toast = useToast();
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Function to fetch locations from the API
   const fetchLocations = async (): Promise<Location[]> => {
-    const response = await axios.get("http://localhost:3000/api/entry");
+    const response = await axios.get(API);
     return response.data.entries;
   };
 
+  // useQuery to get locations data
   const {
     data: locations,
     isLoading,
@@ -50,6 +57,7 @@ export default function Locations() {
     queryFn: fetchLocations,
   });
 
+  // Mutation to update location
   const updateLocation = useMutation({
     mutationFn: async (data: Location) => {
       const response = await axios.put(API + `/${data._id}`, data);
@@ -76,11 +84,10 @@ export default function Locations() {
     },
   });
 
+  // Mutation to delete location
   const deleteLocation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await axios.delete(
-        `http://localhost:3000/api/entry/${id}`
-      );
+      const response = await axios.delete(API + `/${id}`);
       return response.data;
     },
     onSuccess: (_, id) => {
@@ -106,9 +113,7 @@ export default function Locations() {
     },
   });
 
-  if (isLoading) return <p>Loading...</p>;
-  if (isError) return <p>Error loading locations</p>;
-
+  // Editable controls for each table cell
   const EditableControls = () => {
     const {
       isEditing,
@@ -144,8 +149,9 @@ export default function Locations() {
     );
   };
 
+  // Pagination logic
   const totalEntries = locations?.length || 0;
-  const entriesPerPage = 6;
+  const entriesPerPage = 7; // Static entries per page
   const totalPages = Math.ceil(totalEntries / entriesPerPage);
   const currentEntries = locations?.slice(
     (currentPage - 1) * entriesPerPage,
@@ -153,7 +159,7 @@ export default function Locations() {
   );
 
   return (
-    <Box m={50} width="100" ml={100} mr={100}>
+    <Box mt={30} width="90" ml={100} mr={100} height="90%">
       <Table variant="striped" colorScheme="blue" size="sm">
         <Thead>
           <Tr>
@@ -164,33 +170,43 @@ export default function Locations() {
           </Tr>
         </Thead>
         <Tbody>
-          {currentEntries?.map((item) => (
-            <Tr key={item._id}>
-              <Td>
-                <Editable
-                  defaultValue={item.username}
-                  onSubmit={(newName) =>
-                    updateLocation.mutate({ ...item, username: newName })
-                  }
-                >
-                  <EditablePreview />
-                  <Input as={EditableInput} />
-                  <EditableControls />
-                </Editable>
-              </Td>
-              <Td>{item.latitude}</Td>
-              <Td>{item.longitude}</Td>
-              <Td>
-                <Button
-                  colorScheme="red"
-                  size="sm"
-                  onClick={() => deleteLocation.mutate(item._id)}
-                >
-                  Delete
-                </Button>
-              </Td>
+          {isError ? (
+            <Tr>
+              <p>Error Loading Locations</p>
             </Tr>
-          ))}
+          ) : isLoading ? (
+            <Tr>
+              <p>Loading ... </p>
+            </Tr>
+          ) : (
+            currentEntries?.map((item) => (
+              <Tr key={item._id}>
+                <Td>
+                  <Editable
+                    defaultValue={item.username}
+                    onSubmit={(newName) =>
+                      updateLocation.mutate({ ...item, username: newName })
+                    }
+                  >
+                    <EditablePreview />
+                    <Input as={EditableInput} />
+                    <EditableControls />
+                  </Editable>
+                </Td>
+                <Td>{item.latitude}</Td>
+                <Td>{item.longitude}</Td>
+                <Td>
+                  <Button
+                    colorScheme="red"
+                    size="sm"
+                    onClick={() => deleteLocation.mutate(item._id)}
+                  >
+                    Delete
+                  </Button>
+                </Td>
+              </Tr>
+            ))
+          )}
         </Tbody>
       </Table>
       <Flex justifyContent="space-between" mt={4}>
