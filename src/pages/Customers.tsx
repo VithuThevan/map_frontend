@@ -45,7 +45,6 @@ export default function Customers() {
   const handleSubmitForm = async () => {
     formData.latitude = latitude;
     formData.longitude = longitude;
-    console.log(formData);
     submitMutation.mutate(); // Trigger mutation for form submission
   };
 
